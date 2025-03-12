@@ -1,0 +1,18 @@
+# Logs
+nginx/var/log/*
+
+# Sensitive data
+*.env
+certbot/conf/*
+certbot/www/*
+
+# WordPress uploads (optional, if you don't want user-uploaded files in repo)
+wp_instance1/public_html/wp-content/uploads/*
+wp_instance2/public_html/wp-content/uploads/*
+
+# Misc
+*.log
+.DS_Store
+
+
+backups/*

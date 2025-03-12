@@ -1,0 +1,120 @@
+services:
+  mysql:
+    container_name: "mysql"
+    image: mysql:8.3.0
+    restart: always
+    command: [
+      '--default_authentication_plugin=mysql_native_password',
+      '--character-set-server=utf8mb4',
+      '--collation-server=utf8mb4_unicode_ci'
+    ]
+    env_file:
+      - ./wp_instance1/.env
+    volumes:
+      - mysql:/var/lib/mysql
+    networks: 
+      - backend
+
+  PMA:
+    container_name: phpmyadmin
+    image: phpmyadmin:5.2.1
+    restart: always
+    environment:
+      - PMA_HOST=mysql
+      - UPLOAD_LIMIT=50M
+    ports:
+      - 127.0.0.1:8080:80
+    networks:
+      - backend
+    depends_on:
+      - mysql
+
+  wp_instance1:
+    container_name: wp_instance1
+    image: wordpress:php8.3 
+    restart: always
+    environment:
+      - WORDPRESS_DB_HOST=mysql
+    env_file:
+      - ./wp_instance1/.env
+    volumes:
+      - ./wp_instance1/public_html:/var/www/html
+    networks:
+      - backend
+      - frontend
+    depends_on:
+      - mysql
+      - nginx
+
+  wp_instance2:
+    container_name: wp_instance2
+    image: wordpress:php8.3
+    restart: always
+    environment:
+      - WORDPRESS_DB_HOST=mysql
+    env_file:
+      - ./wp_instance2/.env
+    volumes:
+      - ./wp_instance2/public_html:/var/www/html
+    networks:
+      - backend
+      - frontend
+    depends_on:
+      - mysql
+      - nginx
+
+  nginx:
+    container_name: nginx
+    image: nginx:1.25.5-alpine3.19
+    restart: always
+    ports:
+      - 443:443
+    volumes:
+      # Nginx Conf
+      - ./nginx/conf/:/etc/nginx/conf.d/:ro
+      - ./static_site/:/var/www/html/:ro # If you also have a static website, you can place it here and configure it in `nginx/config/app.conf`.
+      # CA
+      - ./certbot/www/:/var/www/certbot/:ro
+      - ./certbot/conf/:/letsencrypt:ro
+      # Log Files
+      - ./nginx/var/log/static/:/var/log/nginx/static/
+      - ./nginx/var/log/wp_instance1/:/var/log/nginx/wp_instance1/
+      - ./nginx/var/log/wp_instance2/:/var/log/nginx/wp_instance2/
+    networks:
+      - frontend
+
+  backup:
+    image: alpine:3.20
+    container_name: backup
+    hostname: alpine
+    command: ["/bin/ash", "-c", "apk add tar coreutils && crond -f -l 8"]
+    volumes:
+      - ./wp_instance1/public_html:/backup/wp_instance1
+      - ./wp_instance2/public_html:/backup/wp_instance2
+      - ./static_site:/backup/static_site
+      - ./Backup-scripts/Daily/:/etc/periodic/daily
+      - ./Backup-scripts/Weekly/:/etc/periodic/weekly
+      - ./Backup-scripts/Monthly/:/etc/periodic/monthly
+      - backups:/Backup
+    networks:
+      - backend
+
+networks:
+  frontend:
+    name: hosting-frontend
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.10.1.0/24
+          gateway: 10.10.1.1
+  backend:
+    name: hosting-backend
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.10.11.0/24
+          gateway: 10.10.11.1
+
+volumes:
+  mysql:
+  backups:
