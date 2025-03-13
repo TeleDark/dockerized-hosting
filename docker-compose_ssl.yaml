@@ -6,7 +6,7 @@ services:
     image: certbot/certbot:v2.10.0
     command: ["certonly", "--webroot", "-w", "/var/www/certbot/", "-d", "${DOMAIN}", "--text", "--agree-tos", "--email", "${CERTBOT_EMAIL}", "--verbose", "--keep-until-expiring"]
     networks:
-      - pirgraf-frontend
+      - hosting-frontend
     volumes:
       - ./certbot/www/:/var/www/certbot/:rw
       - ./certbot/conf/:/etc/letsencrypt/:rw
