@@ -45,7 +45,7 @@ This project provides a scalable hosting environment with:
 ## Setup Instructions
 ### 1. Clone the Repository
 ```bash
-git clone <repo-url>
+git clone https://github.com/TeleDark/dockerized-hosting.git
 cd dockerized-hosting
 ```
 
